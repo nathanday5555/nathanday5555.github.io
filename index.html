@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft UI Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1D1D1D;
+            color: #fff;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+        .left-section {
+            flex: 2;
+            max-width: 40%;
+        }
+        .empty-section {
+            flex: 1;
+            max-width: 10%;
+        }
+        .symbols-container.collapsed {
+            display: none;
+        }
+        .symbols-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .symbol-column {
+            flex: 1;
+        }
+        .symbol-column h3 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .symbol-button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            margin-bottom: 5px;
+            background-color: #4C4C4C;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .symbol-button:hover {
+            background-color: #5C5C5C;
+        }
+        .symbol-name {
+            margin-right: 10px;
+        }
+        .symbol {
+            font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        }
+        .preview-section {
+            flex: 1;
+            max-width: 50%;
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+        }
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #373737;
+            color: #fff;
+            border: 2px solid #4C4C4C;
+            font-family: Arial, sans-serif;
+            resize: none;
+            overflow: hidden;
+        }
+        input, button {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #373737;
+            color: #fff;
+            border: 2px solid #4C4C4C;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            cursor: pointer;
+            background-color: #4AAE4F;
+            border: 2px solid #62FF5A;
+            text-shadow: 2px 2px #1D1D1D;
+        }
+        button:hover {
+            background-color: #62FF5A;
+        }
+        .preview {
+            background-color: #000000;
+            border: 2px solid #FFFFFF;
+            box-shadow: inset 3px 3px rgba(255,255,255,0.3);
+            padding: 10px;
+            color: #FFFFFF;
+            position: relative;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .preview-title {
+            background-color: #C6C6C6;
+            border-bottom: 2px solid #FFFFFF;
+            padding: 5px;
+            margin: -10px -10px 10px -10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: #000000;
+        }
+        .preview-container {
+            position: sticky;
+            top: 60px;
+        }
+        .preview-close {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            cursor: pointer;
+        }
+        .preview-button {
+            background-color: #C6C6C6;
+            border: 2px solid #FFFFFF;
+            box-shadow: inset -2px -2px rgba(0,0,0,0.7);
+            padding: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .preview-button.full-width {
+            justify-content: center;
+        }
+        .preview-button:hover {
+            background-color: #D0D0D0;
+        }
+        .preview-button-icon {
+            width: 20px;
+            height: 20px;
+            background-color: #8B8B8B;
+            border: 2px solid #373737;
+            margin-right: 5px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .preview-button-text {
+            flex-grow: 1;
+            color: #000000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .full-width .preview-button-text {
+            text-align: center;
+        }
+        #generatedCode {
+            white-space: pre-wrap;
+            background-color: #373737;
+            padding: 10px;
+            border: 2px solid #4C4C4C;
+        }
+        .button-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .button-input input {
+            flex: 1;
+        }
+        .icon-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .icon-button {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .color-palette, .format-codes {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .color-button, .format-button {
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 60px;
+        }
+        .color-button {
+            color: white;
+            text-shadow: 1px 1px black;
+        }
+        .color-button[style*="background-color:#000000"] {
+            color: white;
+            text-shadow: none;
+        }
+        .color-name, .format-description {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .color-code, .format-code {
+            font-size: 0.9em;
+        }
+        .format-button {
+            background-color: #4C4C4C;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minecraft UI Generator</h1>
+    <div class="main-container">
+        <div class="left-section">
+            <div class="input-section">
+                <input type="text" id="titleInput" placeholder="Title">
+                <textarea id="bodyInput" placeholder="Body text" rows="1"></textarea>
+                <div id="buttonInputs">
+                    <!-- Button inputs will be dynamically added here -->
+                </div>
+                <button id="addButtonBtn" onclick="addButton()">Add Button</button>
+            </div>
+            <button onclick="generateCode()">Generate Code</button>
+            <h2>Generated Code</h2>
+            <pre id="generatedCode"></pre>
+            <h2>Color Palette</h2>
+            <div id="colorPalette" class="color-palette"></div>
+            <h2>Format Codes</h2>
+            <div id="formatCodes" class="format-codes"></div>
+            <div class="collapsible-section">
+                <h2>Symbols <button id="toggleSymbols">▼</button></h2>
+                <div id="symbols" class="symbols"></div>
+            </div>
+        </div>
+        <div class="empty-section"></div>
+        <div class="preview-section">
+            <h2>Preview</h2>
+            <div class="preview-container">
+                <div id="preview" class="preview">
+                    <div class="preview-title">
+                        <span id="previewTitle"></span>
+                        <span class="preview-close">×</span>
+                    </div>
+                    <div id="previewBody"></div>
+                    <div id="previewButtons"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let buttonCount = 0;
+        const colorCodes = {
+            '§0': '000000', '§1': '0000AA', '§2': '00AA00', '§3': '00AAAA',
+            '§4': 'AA0000', '§5': 'AA00AA', '§6': 'FFAA00', '§7': 'AAAAAA',
+            '§8': '555555', '§9': '5555FF', '§a': '55FF55', '§b': '55FFFF',
+            '§c': 'FF5555', '§d': 'FF55FF', '§e': 'FFFF55', '§f': 'FFFFFF'
+        };
+        const formatCodes = {
+            '§k': 'Obfuscated',
+            '§l': 'Bold',
+            '§m': 'Strikethrough',
+            '§n': 'Underline',
+            '§o': 'Italic',
+            '§r': 'Reset',
+            '\\n': 'New Line',
+        };
+        const symbols = {
+            'Food': '‹', 'Armor': '›', 'Heart': '❤', 'Wooden Pickaxe': '–',
+            'Wooden Sword': '†', 'Crafting Table': '✗', 'Furnace': '✓',
+            'Minecoin': '▶', 'Token': 'ᚬ', 'Craft Toggle On': '⌃',
+            'Craft Toggle Off': '⌄', 'Crosshair': '›', 'Agent': '‖',
+            'Immersive Reader': '✎', 'Hollow Star': '✯', 'Solid Star': '☆'
+        };
+
+        function addButton() {
+            const buttonInputs = document.getElementById('buttonInputs');
+            const newButtonInput = document.createElement('div');
+            newButtonInput.className = 'button-input';
+            newButtonInput.innerHTML = `
+                <input type="text" id="buttonIcon${buttonCount}" placeholder="Icon" oninput="updatePreview()">
+                <input type="text" id="buttonText${buttonCount}" placeholder="Button Text" oninput="updatePreview()">
+                <div class="icon-buttons">
+                    <button class="icon-button" onclick="addButton()">+</button>
+                    <button class="icon-button" onclick="removeButton(this)">×</button>
+                </div>
+            `;
+            buttonInputs.appendChild(newButtonInput);
+            buttonCount++;
+            updateAddButtonVisibility();
+            updatePreview();
+        }
+
+        function removeButton(button) {
+            button.closest('.button-input').remove();
+            buttonCount--;
+            updateAddButtonVisibility();
+            updatePreview();
+        }
+
+        function limitButtonText(text) {
+            return text.length > 36 ? text.substring(0, 36) : text;
+        }
+
+        function updateAddButtonVisibility() {
+            const addButtonBtn = document.getElementById('addButtonBtn');
+            addButtonBtn.style.display = buttonCount === 0 ? 'block' : 'none';
+        }
+
+        function updatePreview() {
+            const titleInput = document.getElementById('titleInput');
+            limitTitleLength(titleInput);
+            const title = titleInput.value;
+            const body = document.getElementById('bodyInput').value;
+            let buttonsHtml = '';
+
+            document.getElementById('previewTitle').innerHTML = applyFormatting(title);
+            document.getElementById('previewBody').innerHTML = applyFormatting(formatBodyText(body))
+
+            const buttonInputs = document.querySelectorAll('.button-input');
+            buttonInputs.forEach((input, index) => {
+                const buttonIcon = input.querySelector(`input[id^="buttonIcon"]`).value;
+                const buttonText = input.querySelector(`input[id^="buttonText"]`).value;
+                if (buttonText || buttonIcon) {
+                    buttonsHtml += `
+                        <div class="preview-button ${!buttonIcon ? 'full-width' : ''}">
+                            ${buttonIcon ? `<div class="preview-button-icon">${buttonIcon}</div>` : ''}
+                            <div class="preview-button-text">${applyFormatting(limitButtonText(buttonText))}</div>
+                        </div>`;
+                }
+            });
+
+            document.getElementById('previewButtons').innerHTML = buttonsHtml;
+        }
+
+        function applyFormatting(text) {
+            let result = '';
+            let currentColor = '';
+            let currentFormat = '';
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '§' && i + 1 < text.length) {
+                    const code = '§' + text[i + 1];
+                    if (colorCodes[code]) {
+                        currentColor = code;
+                        currentFormat = '';
+                    } else if (formatCodes[code]) {
+                        if (code === '§r') {
+                            currentColor = '';
+                            currentFormat = '';
+                        } else {
+                            currentFormat += code;
+                        }
+                    }
+                    i++; // Skip the next character
+                } else if (text[i] === '<' && text.substr(i, 4) === '<br>') {
+                    result += '<br>';
+                    i += 3; // Skip the rest of '<br>'
+                } else {
+                    let style = '';
+                    if (currentColor && colorCodes[currentColor]) {
+                        style += `color: #${colorCodes[currentColor]};`;
+                    }
+                    if (currentFormat.includes('§l')) style += 'font-weight: bold;';
+                    if (currentFormat.includes('§m')) style += 'text-decoration: line-through;';
+                    if (currentFormat.includes('§n')) style += 'text-decoration: underline;';
+                    if (currentFormat.includes('§o')) style += 'font-style: italic;';
+
+                    if (style) {
+                        result += `<span style="${style}">${text[i]}</span>`;
+                    } else {
+                        result += text[i];
+                    }
+                }
+            }
+            return result;
+        }
+
+        function formatBodyText(text) {
+            const maxLineLength = 36;
+            let formattedText = '';
+            let lines = text.split('\\n');
+
+            for (let line of lines) {
+                let currentLine = '';
+                let words = line.split(/(\s+)/);
+                for (let word of words) {
+                    if (countVisibleCharacters(currentLine + word) > maxLineLength) {
+                        if (currentLine) {
+                            formattedText += currentLine.trim() + '<br>';
+                            currentLine = word;
+                        } else {
+                            while (countVisibleCharacters(word) > maxLineLength) {
+                                formattedText += word.substring(0, maxLineLength) + '<br>';
+                                word = word.substring(maxLineLength);
+                            }
+                            currentLine = word;
+                        }
+                    } else {
+                        currentLine += word;
+                    }
+                }
+                if (currentLine) {
+                    formattedText += currentLine.trim() + '<br>';
+                }
+            }
+        
+            return formattedText.slice(0, -4); // Remove the last <br>
+        }
+
+        function adjustTextareaHeight(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function generateCode() {
+            const title = document.getElementById('titleInput').value;
+            const body = document.getElementById('bodyInput').value;
+            let buttonsCode = '';
+
+            const buttonInputs = document.querySelectorAll('.button-input');
+            buttonInputs.forEach((input, index) => {
+                const buttonIcon = input.querySelector(`input[id^="buttonIcon"]`).value;
+                const buttonText = input.querySelector(`input[id^="buttonText"]`).value;
+                if (buttonText || buttonIcon) {
+                    buttonsCode += `button("${buttonText}", "${buttonIcon}");\n`;
+                }
+            });
+
+            const generatedCode = `
+                title("${title}");
+                body("${body}");
+                ${buttonsCode}`;
+
+            document.getElementById('generatedCode').textContent = generatedCode;
+        }
+
+        function createColorPalette() {
+            const palette = document.getElementById('colorPalette');
+            const colorNames = {
+                '§0': 'Black', '§1': 'DarkBlue', '§2': 'DarkGreen', '§3': 'DarkAqua',
+                '§4': 'DarkRed', '§5': 'DarkPurple', '§6': 'Gold', '§7': 'Gray',
+                '§8': 'DarkGray', '§9': 'Blue', '§a': 'Green', '§b': 'Aqua',
+                '§c': 'Red', '§d': 'LightPurple', '§e': 'Yellow', '§f': 'White'
+            };
+            for (const [code, color] of Object.entries(colorCodes)) {
+                const button = document.createElement('div');
+                button.className = 'color-button';
+                button.style.backgroundColor = `#${color}`;
+                button.innerHTML = `<div class="color-name">${colorNames[code]}</div><div class="color-code">${code}</div>`;
+                button.onclick = () => {
+                    navigator.clipboard.writeText(code).then(() => {
+                        alert(`Copied ${code} to clipboard!`);
+                    });
+                };
+                palette.appendChild(button);
+            }
+        }
+
+        function createFormatCodes() {
+            const formatSection = document.getElementById('formatCodes');
+            for (const [code, description] of Object.entries(formatCodes)) {
+                const button = document.createElement('div');
+                button.className = 'format-button';
+                button.innerHTML = `<div class="format-description">${description}</div><div class="format-code">${code}</div>`;
+                button.onclick = () => {
+                    navigator.clipboard.writeText(code).then(() => {
+                        alert(`Copied ${code} to clipboard!`);
+                    });
+                };
+                formatSection.appendChild(button);
+            }
+        }
+
+        function createSymbols() {
+            const symbolsSection = document.getElementById('symbols');
+            symbolsSection.innerHTML = ''; // Clear existing content
+                
+            const categories = {
+                basic: {
+                    wifiOn: '\ue100', wifiOff: '\ue101', controller: '\ue102', touch: '\ue103', mouse: '\ue104',
+                    vr: '\ue105', minecoinGold: '\ue120', experienceOrb: '\ue13a', food: '\ue13b', armor: '\ue13c',
+                    minecart: '\ue13d', boat: '\ue13e', bucketLava: '\ue13f', bucketWater: '\ue140', bucketMilk: '\ue141',
+                    bucketPowderSnow: '\ue142', dye: '\ue143', amulet: '\ue144'
+                },
+                controls: {
+                    arrowLeft: '\ue106', arrowRight: '\ue107', arrowUp: '\ue108', arrowDown: '\ue109', leftClick: '\ue110',
+                    rightClick: '\ue111', middleClick: '\ue112', jump: '\ue113', crouch: '\ue114', fly: '\ue115',
+                    sprint: '\ue116', swim: '\ue117', enter: '\ue118', drop: '\ue119', chat: '\ue11a',
+                    craftingSlot: '\ue11b', craftingTableSlot: '\ue11c', furnaceSlot: '\ue11d', breedingSlot: '\ue11e', chestSlot: '\ue11f'
+                },
+                effect: {
+                    mobEffectHealthBoost: '\ue121', mobEffectAbsorption: '\ue122', mobEffectResistance: '\ue123',
+                    mobEffectRegeneration: '\ue124', mobEffectLuck: '\ue125', mobEffectUnluck: '\ue126',
+                    mobEffectStrength: '\ue127', mobEffectWeakness: '\ue128', mobEffectPoison: '\ue129',
+                    mobEffectNausea: '\ue12a', mobEffectHunger: '\ue12b', mobEffectSaturation: '\ue12c',
+                    mobEffectLevitation: '\ue12d', mobEffectFatigue: '\ue12e', mobEffectHaste: '\ue12f',
+                    mobEffectMiningFatigue: '\ue130', mobEffectSlowFalling: '\ue131', mobEffectConduitPower: '\ue132',
+                    mobEffectBlindness: '\ue133', mobEffectNightVision: '\ue134', mobEffectInvisibility: '\ue135',
+                    mobEffectFireResistance: '\ue136', mobEffectWaterBreathing: '\ue137', mobEffectBadOmen: '\ue138',
+                    mobEffectVillageHero: '\ue139'
+                }
+            };      
+
+            const container = document.createElement('div');
+            container.className = 'symbols-container';      
+
+            for (const [category, symbols] of Object.entries(categories)) {
+                const column = document.createElement('div');
+                column.className = 'symbol-column';
+
+                const title = document.createElement('h3');
+                title.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                column.appendChild(title);      
+
+                for (const [name, symbol] of Object.entries(symbols)) {
+                    const button = document.createElement('div');
+                    button.className = 'symbol-button';
+                    button.innerHTML = `<span class="symbol-name">${name}:</span> <span class="symbol">${symbol}</span>`;
+                    button.onclick = () => {
+                        navigator.clipboard.writeText(symbol).then(() => {
+                            alert(`Copied ${name} symbol to clipboard!`);
+                        });
+                    };
+                    column.appendChild(button);
+                }       
+
+                container.appendChild(column);
+            }       
+
+            symbolsSection.appendChild(container);
+        }
+
+        function countVisibleCharacters(str) {
+            return str.replace(/§[0-9a-fklmnor]/g, '').length;
+        }
+
+        function limitTitleLength(input) {
+            let visibleLength = countVisibleCharacters(input.value);
+            if (visibleLength > 36) {
+                let truncated = '';
+                let count = 0;
+                for (let i = 0; i < input.value.length; i++) {
+                    if (input.value[i] === '§' && i + 1 < input.value.length) {
+                        truncated += input.value[i] + input.value[i + 1];
+                        i++;
+                    } else {
+                        truncated += input.value[i];
+                        count++;
+                        if (count === 36) break;
+                    }
+                }
+                input.value = truncated;
+            }
+        }
+
+        function setupCollapsibleSymbols() {
+            const toggleButton = document.getElementById('toggleSymbols');
+            const symbolsContainer = document.querySelector('.symbols-container');
+
+            toggleButton.addEventListener('click', function() {
+                symbolsContainer.classList.toggle('collapsed');
+                this.textContent = symbolsContainer.classList.contains('collapsed') ? '▶' : '▼';
+            });
+        }
+
+        // Initialize the UI
+        updateAddButtonVisibility();
+        document.getElementById('titleInput').addEventListener('input', function() {
+            limitTitleLength(this);
+            updatePreview();
+        });
+
+        const bodyInput = document.getElementById('bodyInput');
+            bodyInput.addEventListener('input', function() {
+                adjustTextareaHeight(this);
+                updatePreview();
+        });
+
+        createColorPalette();
+        createFormatCodes();
+        createSymbols();
+        adjustTextareaHeight(document.getElementById('bodyInput'));
+        setupCollapsibleSymbols();
+    </script>
+</body>
+</html>
